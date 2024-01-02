@@ -1,0 +1,13 @@
+[package]
+name = "rdf_store"
+version = "0.1.0"
+authors = ["Brett Chaldecott <brett.chaldecott@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+asn1_lib = { path="../asn1_lib"}
+environment_lib = { path="../environment_lib" }
+config_lib = { path="../config_lib"}
+spool_client = { path="../spool_client"}
+oxigraph = "0.3.20"

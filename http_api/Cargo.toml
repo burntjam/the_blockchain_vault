@@ -1,0 +1,15 @@
+[package]
+name = "http_api"
+version = "0.1.0"
+authors = ["Your Name <your.email@example.com>"]
+edition = "2018"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.14"
+futures-util = "0.3"
+config_lib = { path="../config_lib"}
+peer2peer_protocol = { path="../peer2peer_protocol"}
+spool_client = { path="../spool_client"}
+asn1_lib = { path="../asn1_lib"}
+actix-web = "4.0"

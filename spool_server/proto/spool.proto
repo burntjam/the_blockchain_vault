@@ -1,0 +1,38 @@
+// hello_world.proto
+
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package spool;
+
+service Spooler {
+    rpc Push (SpoolRequest) returns (google.protobuf.Empty);
+    rpc Consume (SpoolSubscriber) returns (SpoolResponse);
+}
+
+message SpoolRequest {
+    string topic = 1;
+    bytes body = 2;
+}
+
+message SpoolResponse {
+    repeated bytes body = 1;
+}
+
+message SpoolSubscriber {
+    string topic = 1;
+    int64 timeout = 2;
+}
+
+service HelloWorld {
+    rpc SayHello (HelloRequest) returns (HelloReply);
+}
+
+message HelloRequest {
+    string name = 1;
+}
+
+message HelloReply {
+    string message = 1;
+}

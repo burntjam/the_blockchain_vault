@@ -1,0 +1,22 @@
+version="0.1.0"
+
+
+[peer_client]
+account="test"
+master="ws://127.0.0.1:3030/ws"
+
+[peer_server]
+account="test"
+address="127.0.0.1:3030"
+
+[spool]
+url = "http://0.0.0.0:50080"
+
+[rdf]
+path = "/tmp/rdf"
+
+[block_db]
+path = "/tmp/block"
+
+[http]
+binding = "127.0.0.1:8080"
