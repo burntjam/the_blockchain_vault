@@ -3,6 +3,8 @@ use oxigraph::model::*;
 use oxigraph::sparql::QueryResults;
 use config_lib::ChainConfig;
 use std::sync::{Arc,Mutex};
+use std::fs;
+use std::io;
 use rdf_lib::{OxigraphStoreManager,OxigraphSessionFactory,StoreManager,StoreSessionFactory};
 
 pub trait DbManager {
@@ -25,6 +27,7 @@ impl BlockDbManager {
         let config = ChainConfig::new().unwrap();
         let environment = environment_lib::Environment::new();
         let path = format!("{}{}",&environment.home_directory,&config.block_db.path);
+        fs::create_dir_all(path.clone())?;
         let store = Arc::new(Mutex::new(Store::open(path).unwrap()));
         let store_manager: Arc<Mutex<dyn StoreManager>> = OxigraphStoreManager::new(store.clone())?;
         let session_factory: Arc<Mutex<dyn StoreSessionFactory>> = OxigraphSessionFactory::new(store_manager.clone())?;
