@@ -38,6 +38,7 @@ pub struct RDFConfig {
 #[derive(Debug, Deserialize)]
 pub struct BlockDBConfig {
     pub path: String,
+    pub spool_url: String,
 }
 
 #[derive(Debug, Deserialize)]

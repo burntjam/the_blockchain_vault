@@ -19,11 +19,11 @@ impl<T: SpoolConnection> SpoolSession<T> {
         SpoolSession { spool_connection }
     }
 
-    fn push(&self,message: Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
-        self.spool_connection.push(message)
+    async fn push(&self,message: Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
+        self.spool_connection.push(message).await
     }
 
-    fn consume(&self) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
-        self.spool_connection.consume()
+    async fn consume(&self) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
+        self.spool_connection.consume().await
     }
 }

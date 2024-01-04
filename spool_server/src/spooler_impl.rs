@@ -1,11 +1,13 @@
 
 use std::collections::HashMap;
+use std::sync::mpsc::Receiver;
 use std::sync::{Mutex, Arc,mpsc};
 use tonic::{transport::Server, Request, Response};
 use spool::spooler_server::{Spooler, SpoolerServer};
 use spool::{SpoolRequest, SpoolSubscriber, SpoolResponse};
 use std::thread;
 use std::time::Duration;
+use tokio::sync::oneshot;
 
 
 pub mod spool {
@@ -114,11 +116,12 @@ impl SpoolerService {
         let spoolerImpl = SpoolerImpl{
             cache: Arc::new(Mutex::new(HashMap::new())),
         };
+        
+        println!("Before starting");
         Server::builder()
             .add_service(SpoolerServer::new(spoolerImpl))
-            .serve(addr)
-            .await?;
-
+            .serve(addr).await?;
+        println!("After starting");
         Ok(())
     }
 }

@@ -1,3 +1,6 @@
+use async_trait::async_trait;
+use std::future::Future;
+use std::pin::Pin;
 use tonic::transport::Channel;
 use tonic::{transport::Server, Request, Response};
 use spool::spooler_client::{SpoolerClient};
@@ -53,46 +56,37 @@ impl SpoolGrpcClient {
 
 
 pub struct SpoolGrpcConnection {
-    rt: tokio::runtime::Runtime,
     client: SpoolGrpcClient,
 }
 
+#[async_trait]
 impl spool_connection::SpoolConnection for SpoolGrpcConnection {
-    fn push(&self,message: Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
+    async fn push(&self,message: Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
         // Then you can use `block_on` to run your async code
-        self.rt.block_on(async {
-            self.client.push(message).await
-        })
+        self.client.push(message).await
     }
-    fn pushToTopic(&self,message: Vec<u8>, topic: &String) -> Result<(), Box<dyn std::error::Error>> {
+
+    async fn pushToTopic(&self,message: Vec<u8>, topic: &String) -> Result<(), Box<dyn std::error::Error>> {
         // Then you can use `block_on` to run your async code
-        self.rt.block_on(async {
-            self.client.pushToTopic(message, topic).await
-        })
+        self.client.pushToTopic(message, topic).await
     }
-    fn consume(&self) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
+
+    async fn consume(&self) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
         // Then you can use `block_on` to run your async code
-        self.rt.block_on(async {
-            self.client.consume().await
-        })
+        self.client.consume().await
     }
-    fn consumeFromTopic(&self, topic: &String) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
+
+    async fn consumeFromTopic(&self, topic: &String) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
         // Then you can use `block_on` to run your async code
-        self.rt.block_on(async {
-            self.client.consumeFromTopic(topic).await
-        })
+        self.client.consumeFromTopic(topic).await
     }
 
 }
 
-pub fn createGrpcConnection(url: String, topic: String) -> Result<Arc<dyn spool_connection::SpoolConnection>, Box<dyn std::error::Error>> {
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    let client = rt.block_on(async {
-        SpoolGrpcClient::createSession(url,topic).await.unwrap()
-    });
+pub async fn createGrpcConnection(url: String, topic: String) -> Result<Arc<dyn spool_connection::SpoolConnection>, Box<dyn std::error::Error>> {
+    let client = SpoolGrpcClient::createSession(url,topic).await?;
 
     Ok(Arc::new(SpoolGrpcConnection {
-        rt,
-        client 
+        client,
     }))
 }

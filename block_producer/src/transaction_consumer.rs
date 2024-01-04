@@ -4,10 +4,14 @@ use spool_client::{SpoolConnection};
 use super::mock::{MockTransactionManager};
 use super::transaction_constants::*;
 use super::transaction_manager::*;
+use async_trait::async_trait;
+use std::future::Future;
+use std::pin::Pin;
 
 
-pub trait TransactionConsumer {
-    fn process(&self);
+#[async_trait]
+pub trait TransactionConsumer : Sync + Send{
+    async fn process(&self);
 }
 
 pub struct BlockTransactionConsumer {
@@ -15,9 +19,10 @@ pub struct BlockTransactionConsumer {
     spool_client: Arc<dyn SpoolConnection>,
 }
 
+#[async_trait]
 impl TransactionConsumer for BlockTransactionConsumer {
-    fn process(&self) {
-        while let result = self.spool_client.consumeFromTopic(&TRANSACTION_TOPIC_NAME.to_string()) {
+    async fn process(&self) {
+        while let result = self.spool_client.consumeFromTopic(&TRANSACTION_TOPIC_NAME.to_string()).await {
             if result.is_err() {
                 break;
             }
@@ -48,16 +53,18 @@ mod tests {
         transactions: Arc<Mutex<Vec<Vec<u8>>>>,
     }
 
+
+    #[async_trait]
     impl spool_connection::SpoolConnection for TransactionSpoolMockConnection {
-        fn push(&self,message: Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
+        async fn push(&self,message: Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
             
             Ok(())
         }
 
-        fn pushToTopic(&self,message: Vec<u8>, topic: &String) -> Result<(), Box<dyn std::error::Error>> {
+        async fn pushToTopic(&self,message: Vec<u8>, topic: &String) -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
-        fn consume(&self) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
+        async fn consume(&self) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
             let mut transactions = self.transactions.lock().unwrap();
             if transactions.len() > 0 {
                 let result = transactions.clone();
@@ -67,7 +74,7 @@ mod tests {
             Err(Box::new(spool_errors::SpoolDisconnectError { message: "An error occurred".to_string() }))
         }
 
-        fn consumeFromTopic(&self, topic: &String) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
+        async fn consumeFromTopic(&self, topic: &String) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
             let mut transactions = self.transactions.lock().unwrap();
             if transactions.len() > 0 {
                 let result = transactions.clone();
@@ -84,12 +91,12 @@ mod tests {
         Ok(Arc::new(TransactionSpoolMockConnection {transactions:entries}))
     }
 
-    #[test]
-    fn test_block_transaction_consumer_new() {
+    #[tokio::test]
+    async fn test_block_transaction_consumer_new() {
         let transaction_manager = MockTransactionManager::new();
         let spool_client = createMockConnection().unwrap();
         let blockTransactionConsumer = BlockTransactionConsumer::new(transaction_manager,spool_client);
-        blockTransactionConsumer.process();
+        blockTransactionConsumer.process().await;
     }
 }
 

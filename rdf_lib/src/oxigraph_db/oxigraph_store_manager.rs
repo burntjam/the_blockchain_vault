@@ -7,6 +7,10 @@ use thread_local::ThreadLocal;
 use std::cell::RefCell;
 use std::sync::{Mutex,Arc};
 use crate::{OxigraphStoreState,StoreState, StoreManager};
+use async_trait::async_trait;
+use std::future::Future;
+use std::pin::Pin;
+
 
 pub struct OxigraphStoreManager {
     store: Arc<Mutex<Store>>,

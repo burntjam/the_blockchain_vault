@@ -8,7 +8,7 @@ use std::io;
 use rdf_lib::{OxigraphStoreManager,OxigraphSessionFactory,StoreManager,StoreSessionFactory};
 
 pub trait DbManager {
-    
+    fn sessionFactory(&self) -> Result<Arc<Mutex<dyn StoreSessionFactory>>,Box<dyn std::error::Error>>;
 }
 
 pub struct BlockDbManager {
@@ -19,7 +19,9 @@ pub struct BlockDbManager {
 
 
 impl DbManager for BlockDbManager {
-
+    fn sessionFactory(&self) -> Result<Arc<Mutex<dyn StoreSessionFactory>>,Box<dyn std::error::Error>> {
+        Ok(self.session_factory.clone())
+    }
 }
 
 impl BlockDbManager {

@@ -2,8 +2,12 @@ use std::sync::Arc;
 use config_lib::ChainConfig;
 use super::transaction_processor::*;
 use super::mock::{MockTransactionProcessor,MockTransactionProcessorFactory};
+use async_trait::async_trait;
+use std::future::Future;
+use std::pin::Pin;
 
-pub trait TransactionManager {
+
+pub trait TransactionManager: Sync + Send {
     fn process(&self,transaction: Vec<u8>);
 }
 
@@ -12,9 +16,11 @@ pub struct BlockTransactionManager {
 }
 
 
+#[async_trait]
 impl TransactionManager for BlockTransactionManager {
     fn process(&self, transaction: Vec<u8>) {
-        self.processor_factory.createProcessor(transaction).process();
+        let processor = self.processor_factory.createProcessor(transaction);
+        let _ = processor.process();
     }
 }
 

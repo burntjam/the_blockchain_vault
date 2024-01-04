@@ -1,11 +1,17 @@
 use crate::transaction_processor::*;
 use std::sync::Arc;
+use async_trait::async_trait;
+use std::future::Future;
+use std::pin::Pin;
+
+
 
 
 pub struct MockTransactionProcessor;
 
+#[async_trait]
 impl TransactionProcessor for MockTransactionProcessor {
-    fn process(&self) {
+    async fn process(&self) {
         
     }
 }

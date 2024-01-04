@@ -1,55 +1,61 @@
-use std::sync::Arc;
+use std::sync::{Arc,Mutex};
 use config_lib::ChainConfig;
 use peer2peer_protocol::{deserialize_bin_message, WebSocketMessage, handler::message};
+use rdf_lib::{StoreSessionFactory};
+use async_trait::async_trait;
+use std::future::Future;
+use std::pin::Pin;
 
+
+#[async_trait]
 pub trait TransactionProcessor {
-    fn process(&self);
+    async fn process(&self);
 }
 
 pub struct BlockTransactionProcessor {
     transaction: Vec<u8>,
-    rt: tokio::runtime::Runtime,
+    session_factory: Arc<Mutex<dyn StoreSessionFactory>>,
 }
 
+#[async_trait]
 impl TransactionProcessor for BlockTransactionProcessor {
-    fn process(&self) {
-        self.rt.block_on(async {
-            let message = deserialize_bin_message(&self.transaction);
-            if message.is_err() {
-                return;
-            }
-            if let WebSocketMessage::Transaction(trans) = message.unwrap() {
-                let account_id = trans.getAccountId();
-                
-            }
-        })
+    async fn process(&self) {
+        let message = deserialize_bin_message(&self.transaction);
+        if message.is_err() {
+            return;
+        }
+        if let WebSocketMessage::Transaction(trans) = message.unwrap() {
+            let account_id = trans.getAccountId();
+            
+        }
     }
 }
 
 impl BlockTransactionProcessor {
-    pub fn new(transaction: Vec<u8>) -> Arc<dyn TransactionProcessor> {
+    pub fn new(transaction: Vec<u8>, session_factory: Arc<Mutex<dyn StoreSessionFactory>>) -> Arc<dyn TransactionProcessor> {
         let config = ChainConfig::new().unwrap();
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        Arc::new(BlockTransactionProcessor { transaction, rt}) as Arc<dyn TransactionProcessor>
+        Arc::new(BlockTransactionProcessor { transaction,  session_factory}) as Arc<dyn TransactionProcessor>
     }
 }
 
-pub trait TransactionProcessorFactory {
+pub trait TransactionProcessorFactory : Sync + Send {
     fn createProcessor(&self, transaction: Vec<u8>) -> Arc<dyn TransactionProcessor>;
 }
 
-pub struct BlockTransactionProcessorFactory{}
+pub struct BlockTransactionProcessorFactory{
+    session_factory: Arc<Mutex<dyn StoreSessionFactory>>,
+}
 
 impl TransactionProcessorFactory for BlockTransactionProcessorFactory {
     fn createProcessor(&self, transaction: Vec<u8>) -> Arc<dyn TransactionProcessor> {
-        BlockTransactionProcessor::new(transaction)
+        BlockTransactionProcessor::new(transaction, self.session_factory.clone())
     }
 }
 
 impl BlockTransactionProcessorFactory {
-    pub fn new() -> Arc<dyn TransactionProcessorFactory> {
+    pub fn new(session_factory: Arc<Mutex<dyn StoreSessionFactory>>) -> Arc<dyn TransactionProcessorFactory> {
         let config = ChainConfig::new().unwrap();
-        Arc::new(BlockTransactionProcessorFactory { }) as Arc<dyn TransactionProcessorFactory>
+        Arc::new(BlockTransactionProcessorFactory { session_factory }) as Arc<dyn TransactionProcessorFactory>
     }
 }
 
@@ -58,20 +64,23 @@ impl BlockTransactionProcessorFactory {
 mod tests {
     use super::*;
     use spool_client::*;
-    use spool_errors::*;
+    use std::error::Error;
     use std::sync::{Mutex, Arc,mpsc};
+    use rdf_lib::MockStoreSessionFactory;
 
 
     #[test]
-    fn test_block_processor_new() {
+    fn test_block_processor_new() -> Result<(), Box<dyn Error>> {
         let transaction = vec![1,2,3,4,5,6];
-        let transaction_processor = BlockTransactionProcessor::new(transaction);
+        let transaction_processor = BlockTransactionProcessor::new(transaction, MockStoreSessionFactory::new()?);
         transaction_processor.process();
+        Ok(())
     }
 
     #[test]
-    fn test_block_transaction_processor_factory_new() {
+    fn test_block_transaction_processor_factory_new() -> Result<(), Box<dyn Error>> {
         let transaction = vec![1,2,3,4,5,6];
-        BlockTransactionProcessorFactory::new().createProcessor(transaction).process();
+        BlockTransactionProcessorFactory::new(MockStoreSessionFactory::new()?).createProcessor(transaction).process();
+        Ok(())
     }
 }
