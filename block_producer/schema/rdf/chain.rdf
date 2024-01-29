@@ -1,0 +1,151 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:bt="http://example.com/blockchain#">
+
+    <!-- Class Definitions -->
+    <rdfs:Class rdf:about="http://example.com/blockchain#Transaction"/>
+    <rdfs:Class rdf:about="http://example.com/blockchain#TransactionLeg"/>
+    <rdfs:Class rdf:about="http://example.com/blockchain#DebitLeg">
+        <rdfs:subClassOf rdf:resource="http://example.com/blockchain#TransactionLeg"/>
+    </rdfs:Class>
+    <rdfs:Class rdf:about="http://example.com/blockchain#CreditLeg">
+        <rdfs:subClassOf rdf:resource="http://example.com/blockchain#TransactionLeg"/>
+    </rdfs:Class>
+    <rdfs:Class rdf:about="http://example.com/blockchain#Block"/>
+    <rdfs:Class rdf:about="http://example.com/blockchain#Tangle"/>
+    <rdfs:Class rdf:about="http://example.com/blockchain#Account"/>
+
+    <!-- Property Definitions -->
+    <!-- Timestamp Properties -->
+    <rdf:Property rdf:about="http://example.com/blockchain#created">
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+    </rdf:Property>
+    <rdf:Property rdf:about="http://example.com/blockchain#modified">
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+    </rdf:Property>
+
+    <!-- Account Id to Accounts Mapping -->
+    <rdf:Property rdf:about="http://example.com/blockchain#accountId">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Account"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    <!-- Transaction ID -->
+    <rdf:Property rdf:about="http://example.com/blockchain#transactionID">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Transaction"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    <!-- Transaction Parent ID -->
+    <rdf:Property rdf:about="http://example.com/blockchain#parentTransactionID">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Transaction"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    <!-- Transaction Parent -->
+    <rdf:Property rdf:about="http://example.com/blockchain#parentTransaction">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Transaction"/>
+        <rdfs:range rdf:resource="http://example.com/blockchain#Transaction"/>
+    </rdf:Property>
+
+    <!-- Transaction Debit Account ID -->
+    <rdf:Property rdf:about="http://example.com/blockchain#transactionDebitAccountId">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Transaction"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    <!-- Transaction Debit Account -->
+    <rdf:Property rdf:about="http://example.com/blockchain#transactionDebitAccount">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Transaction"/>
+        <rdfs:range rdf:resource="http://example.com/blockchain#Account"/>
+    </rdf:Property>
+
+    <!-- Transaction Credit Account ID -->
+    <rdf:Property rdf:about="http://example.com/blockchain#transactionDebitAccountId">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Transaction"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    <!-- Transaction Credit Account -->
+    <rdf:Property rdf:about="http://example.com/blockchain#transactionDebitAccount">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Transaction"/>
+        <rdfs:range rdf:resource="http://example.com/blockchain#Account"/>
+    </rdf:Property>
+
+    <!-- Transaction Value -->
+    <rdf:Property rdf:about="http://example.com/blockchain#transactionValue">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Transaction"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </rdf:Property>
+
+    <!-- Transaction Data Blob -->
+    <rdf:Property rdf:about="http://example.com/blockchain#dataBlob">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Transaction"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    <!-- Transaction Leg State -->
+    <rdf:Property rdf:about="http://example.com/blockchain#legState">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#TransactionLeg"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    <!-- Block ID -->
+    <rdf:Property rdf:about="http://example.com/blockchain#blockId">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Block"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    <!-- Block Signature -->
+    <rdf:Property rdf:about="http://example.com/blockchain#blockSignature">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Block"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    <!-- Parent Block -->
+    <rdf:Property rdf:about="http://example.com/blockchain#parentBlock">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Block"/>
+        <rdfs:range rdf:resource="http://example.com/blockchain#Block"/>
+    </rdf:Property>
+
+    <!-- Block Merkle Tree Root -->
+    <rdf:Property rdf:about="http://example.com/blockchain#merkleTreeRoot">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Block"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    <!-- Block to Transactions Mapping -->
+    <rdf:Property rdf:about="http://example.com/blockchain#includesTransaction">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Block"/>
+        <rdfs:range rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq"/>
+    </rdf:Property>
+
+    <!-- Tangle to Accounts Mapping -->
+    <rdf:Property rdf:about="http://example.com/blockchain#tangleId">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Tangle"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    <!-- Tangle to Accounts Mapping -->
+    <rdf:Property rdf:about="http://example.com/blockchain#includesAccount">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Tangle"/>
+        <rdfs:range rdf:resource="http://example.com/blockchain#Account"/>
+    </rdf:Property>
+
+    <!-- Tangle to Blocks Mapping -->
+    <rdf:Property rdf:about="http://example.com/blockchain#blockTangle">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Block"/>
+        <rdfs:range rdf:resource="http://example.com/blockchain#Tangle"/>
+    </rdf:Property>
+
+    <!-- Tangle to Blocks Mapping -->
+    <rdf:Property rdf:about="http://example.com/blockchain#blockTangleId">
+        <rdfs:domain rdf:resource="http://example.com/blockchain#Block"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </rdf:Property>
+
+    
+    <!-- ... additional properties as needed ... -->
+
+</rdf:RDF>

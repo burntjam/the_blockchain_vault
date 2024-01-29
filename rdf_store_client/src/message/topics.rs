@@ -1,0 +1,1 @@
+pub const RDF_STORE_TOPIC: &str = "RDF_STORE";

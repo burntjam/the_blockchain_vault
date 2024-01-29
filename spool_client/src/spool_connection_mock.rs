@@ -35,6 +35,12 @@ impl spool_connection::SpoolConnection for SpoolMockConnection {
     }
 }
 
+impl SpoolMockConnection {
+    pub async fn new() -> Result<Arc<dyn spool_connection::SpoolConnection>, Box<dyn std::error::Error>> {
+        Ok(Arc::new(SpoolMockConnection {}))
+    }    
+}
+
 
 pub async fn createMockConnection() -> Result<Arc<dyn spool_connection::SpoolConnection>, Box<dyn std::error::Error>> {
     Ok(Arc::new(SpoolMockConnection {}))

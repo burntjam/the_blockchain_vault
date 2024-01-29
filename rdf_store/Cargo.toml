@@ -6,8 +6,13 @@ edition = "2018"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 asn1_lib = { path="../asn1_lib"}
 environment_lib = { path="../environment_lib" }
 config_lib = { path="../config_lib"}
 spool_client = { path="../spool_client"}
+rdf_lib = { path="../rdf_lib"}
+rdf_store_client = { path="../rdf_store_client"}
 oxigraph = "0.3.20"
+async-trait = "0.1.76"

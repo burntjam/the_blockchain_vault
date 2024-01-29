@@ -83,6 +83,16 @@ impl spool_connection::SpoolConnection for SpoolGrpcConnection {
 
 }
 
+impl SpoolGrpcConnection {
+    pub async fn new(url: &String, topic: &String) -> Result<Arc<dyn spool_connection::SpoolConnection>, Box<dyn std::error::Error>> {
+        let client = SpoolGrpcClient::createSession(url.clone(),topic.clone()).await?;
+    
+        Ok(Arc::new(SpoolGrpcConnection {
+            client,
+        }))
+    }
+}
+
 pub async fn createGrpcConnection(url: String, topic: String) -> Result<Arc<dyn spool_connection::SpoolConnection>, Box<dyn std::error::Error>> {
     let client = SpoolGrpcClient::createSession(url,topic).await?;
 
