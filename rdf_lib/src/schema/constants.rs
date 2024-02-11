@@ -22,7 +22,6 @@ impl fmt::Display for RDFClasses {
             RDFClasses::BLOCK => "blockchain#Block",
             RDFClasses::TANGLE => "blockchain#Tangle",
             RDFClasses::ACCOUNT => "blockchain#ACCOUNT",
-            // ... other match arms
         };
         write!(f, "{}{}", SCHEMA_BASE, base_str)
     }
@@ -38,7 +37,6 @@ impl fmt::Display for RDFMeta {
         let base_str = match self {
             RDFMeta::CREATED => "blockchain#created",
             RDFMeta::MODIFIED => "blockchain#modified",
-            // ... other match arms
         };
         write!(f, "{}{}", SCHEMA_BASE, base_str)
     }
@@ -82,7 +80,6 @@ impl fmt::Display for RDFTransaction {
             RDFTransaction::CREDIT_ACCOUNT_ID => "blockchain#creditAccountId",
             RDFTransaction::VALUE => "blockchain#transactionValue",
             RDFTransaction::DATA_BLOB => "blockchain#dataBlob",
-            // ... other match arms
         };
         write!(f, "{}{}", SCHEMA_BASE, base_str)
     }
@@ -108,7 +105,6 @@ impl fmt::Display for RDFBlock {
             RDFBlock::INCLUDES_TRANSACTIONS => "blockchain#includesTransaction",
             RDFBlock::TANGLE => "blockchain#blockTangle",
             RDFBlock::TANGLE_ID => "blockchain#blockTangleId",
-            // ... other match arms
         };
         write!(f, "{}{}", SCHEMA_BASE, base_str)
     }

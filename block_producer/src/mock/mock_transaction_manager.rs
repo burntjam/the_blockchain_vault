@@ -6,7 +6,7 @@ pub struct MockTransactionManager;
 
 
 impl TransactionManager for MockTransactionManager {
-    fn process(&self, transaction: Vec<u8>) {
+    fn process(&self, transaction: &Vec<u8>) {
         
     }
 }

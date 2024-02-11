@@ -11,13 +11,13 @@ pub struct MockTransactionProcessor;
 
 #[async_trait]
 impl TransactionProcessor for MockTransactionProcessor {
-    async fn process(&self) {
-        
+    async fn process(&self)  -> Result<(), Box<dyn std::error::Error>> {
+        Ok(())
     }
 }
 
 impl MockTransactionProcessor {
-    pub fn new(transaction: Vec<u8>) -> Arc<dyn TransactionProcessor> {
+    pub fn new(transaction: &Vec<u8>) -> Arc<dyn TransactionProcessor> {
         Arc::new(MockTransactionProcessor { }) as Arc<dyn TransactionProcessor>
     }
 }
@@ -25,7 +25,7 @@ impl MockTransactionProcessor {
 pub struct MockTransactionProcessorFactory;
 
 impl TransactionProcessorFactory for MockTransactionProcessorFactory {
-    fn createProcessor(&self, transaction: Vec<u8>) -> Arc<dyn TransactionProcessor> {
+    fn createProcessor(&self, transaction: &Vec<u8>) -> Arc<dyn TransactionProcessor> {
         MockTransactionProcessor::new(transaction)
     }
 }

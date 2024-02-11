@@ -8,7 +8,7 @@ struct Person2 {
     pub name: Option<String>,
 }
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, Copy,  PartialEq)]
 #[repr(u8)] // underlying integer type, if necessary for your use case
 #[rasn(enumerated)]
 pub enum Status {
@@ -29,7 +29,7 @@ pub enum Status {
 
 }
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct PrivateKey {
     pub version:         u32,
@@ -37,7 +37,7 @@ pub struct PrivateKey {
     pub key:             rasn::types::OctetString,
 }
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct PublicKey {
     pub version:         u32,
@@ -46,19 +46,19 @@ pub struct PublicKey {
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct Action {
     pub version:         u32,
     pub date:            rasn::types::UtcTime,
     pub contract:        Option<rasn::types::OctetString>,
-    pub contractName:    Option<String>,
+    pub contractName:    Option<rasn::types::OctetString>,
     pub parent:          rasn::types::OctetString,
     pub model:           rasn::types::Any,
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct Transaction {
     pub version:                u32,
@@ -74,7 +74,7 @@ pub struct Transaction {
     // to track internal transactions for security and validation purposes
     pub transactionSignator:    rasn::types::OctetString,
     pub creatorId:              rasn::types::OctetString,
-    pub actions:                Vec<Action>,
+    pub actions:                rasn::types::SequenceOf<Action>,
 }
 
 #[derive(AsnType, Clone, Debug, Decode, Encode, PartialEq)]
@@ -87,17 +87,17 @@ pub enum ChangeData {
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct ChangeSet {
     pub version:                u32,
     pub transactionHash:        rasn::types::OctetString,
     pub accountHash:            rasn::types::OctetString,
     pub status:                 Status,
-    pub changes:                Vec<ChangeData>,
+    pub changes:                rasn::types::SequenceOf<ChangeData>,
 }
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct SignedChangeSet {
     pub changeSet:              ChangeSet,
@@ -105,7 +105,7 @@ pub struct SignedChangeSet {
     pub signature:              rasn::types::OctetString,
 }
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct SignedTransaction {
     pub version:                u32,
@@ -115,7 +115,7 @@ pub struct SignedTransaction {
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct TransactionTrace {
     pub traceHash:              rasn::types::OctetString,
@@ -123,7 +123,7 @@ pub struct TransactionTrace {
     pub signatureHash:          rasn::types::OctetString,
 }
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct TransactionWrapper {
     pub version:             u32,
@@ -136,14 +136,14 @@ pub struct TransactionWrapper {
     pub signature:           rasn::types::OctetString,
     // transaction
     pub signedTransaction:   SignedTransaction,
-    pub transactionTrace:    Vec<TransactionTrace>,
+    pub transactionTrace:    rasn::types::SequenceOf<TransactionTrace>,
     // status and changeset
     pub currentStatus:       Status,
-    pub changeSet:           Vec<SignedChangeSet>,
+    pub changeSet:           rasn::types::SequenceOf<SignedChangeSet>,
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct EncryptedDataWrapper {
     pub version:             u32,
@@ -151,11 +151,11 @@ pub struct EncryptedDataWrapper {
     // the hash of the transaction when encrypted
     // this is here to validate that the onion encryption is being
     // decrypted correctly through the various layers.
-    pub hash:                Vec<rasn::types::OctetString>,
+    pub hash:                rasn::types::SequenceOf<rasn::types::OctetString>,
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct TransactionMessage {
     pub version:              u32,
@@ -163,11 +163,11 @@ pub struct TransactionMessage {
     pub transaction:          TransactionWrapper,
     pub availableTime:        u64,
     pub elapsedTime:          u64,
-    pub sideTransactions:     Vec<TransactionMessage>,
-    pub encryptedSideTransactions:  Vec<EncryptedDataWrapper>,
+    pub sideTransactions:     rasn::types::SequenceOf<TransactionMessage>,
+    pub encryptedSideTransactions:  rasn::types::SequenceOf<EncryptedDataWrapper>,
 }
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct SoftwareConsensus {
     pub version:         u32,
@@ -175,25 +175,25 @@ pub struct SoftwareConsensus {
     pub previousHash:    rasn::types::OctetString,
     pub account:         rasn::types::OctetString,
     pub seed:            rasn::types::OctetString,
-    pub systemHashs:     Vec<rasn::types::OctetString>,
+    pub systemHashs:     rasn::types::SequenceOf<rasn::types::OctetString>,
     pub merkelRoot:      rasn::types::OctetString,
     pub signature:       rasn::types::OctetString,
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct Block {
     pub version:            u32,
     pub date:               rasn::types::UtcTime,
     pub parent:             rasn::types::OctetString,
-    pub transactions:       Vec<TransactionWrapper>,
+    pub transactions:       rasn::types::SequenceOf<TransactionWrapper>,
     pub acceptedCheck:      SoftwareConsensus,
     pub validateCheck:      SoftwareConsensus,
     pub merkelRoot:         rasn::types::OctetString
 }
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct SignedBlock {
     pub version:            u32,
@@ -201,12 +201,12 @@ pub struct SignedBlock {
     pub parent:             rasn::types::OctetString,
     pub block:              Block,
     pub hash:               rasn::types::OctetString,
-    pub signatures:         Vec<rasn::types::OctetString>,
+    pub signatures:         rasn::types::SequenceOf<rasn::types::OctetString>,
 }
 
 
 // rdf
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, Copy, PartialEq)]
 #[repr(u8)] // underlying integer type, if necessary for your use case
 #[rasn(enumerated)]
 pub enum RDFChange {
@@ -219,7 +219,7 @@ pub enum RDFChange {
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct RDFObject {
     pub value:              rasn::types::OctetString,
@@ -229,23 +229,23 @@ pub struct RDFObject {
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct RDFPredicate {
     pub predicate:          rasn::types::OctetString,
-    pub rdfObjects:         Vec<RDFObject>,
+    pub rdfObjects:         rasn::types::SequenceOf<RDFObject>,
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct RDFSubject {
     pub subject:            rasn::types::OctetString,
-    pub rdfPredicates:      Vec<RDFPredicate>
+    pub rdfPredicates:      rasn::types::SequenceOf<RDFPredicate>
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct RDFNT {
     pub version:            u32,
@@ -255,25 +255,25 @@ pub struct RDFNT {
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct RDFNtGroup {
     pub version:            u32,
-    pub rdfNT:              Vec<RDFNT>,
+    pub rdfNT:              rasn::types::SequenceOf<RDFNT>,
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct RDFModel {
     pub action:             RDFChange,
-    pub rdfSubjects:        Vec<RDFSubject>,
-    pub rdfNtGroups:        Vec<RDFNtGroup>,
+    pub rdfSubjects:        rasn::types::SequenceOf<RDFSubject>,
+    pub rdfNtGroups:        rasn::types::SequenceOf<RDFNtGroup>,
 }
 
 
 // Election
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct Election {
     pub version:             u32,
@@ -284,7 +284,7 @@ pub struct Election {
 }
 
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct SignedElection {
     pub version:             u32,
@@ -293,19 +293,19 @@ pub struct SignedElection {
     pub signature:           rasn::types::OctetString,
 }
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct ElectNode {
     pub version:             u32,
     pub date:                rasn::types::UtcTime,
     pub accountHash:         rasn::types::OctetString,
     pub electedNode:         SignedElection,
-    pub alternatives:        Vec<SignedElection>,
+    pub alternatives:        rasn::types::SequenceOf<SignedElection>,
     pub acceptedCheck:       SoftwareConsensus,
     pub validateCheck:       SoftwareConsensus,
 }
 
-#[derive(AsnType,Clone, Decode, Debug, PartialEq)]
+#[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct SignedElectNode {
     pub version:              u32,

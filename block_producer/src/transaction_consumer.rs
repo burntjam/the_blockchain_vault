@@ -27,7 +27,7 @@ impl TransactionConsumer for BlockTransactionConsumer {
                 break;
             }
             let transactions = result.unwrap();
-            transactions.iter().for_each(|entry| self.transaction_manager.process(entry.clone()) );
+            transactions.iter().for_each(|entry| self.transaction_manager.process(&entry) );
         }
     }
 }

@@ -8,7 +8,7 @@ use std::pin::Pin;
 
 
 pub trait TransactionManager: Sync + Send {
-    fn process(&self,transaction: Vec<u8>);
+    fn process(&self,transaction: &Vec<u8>);
 }
 
 pub struct BlockTransactionManager {
@@ -18,7 +18,7 @@ pub struct BlockTransactionManager {
 
 #[async_trait]
 impl TransactionManager for BlockTransactionManager {
-    fn process(&self, transaction: Vec<u8>) {
+    fn process(&self, transaction: &Vec<u8>) {
         let processor = self.processor_factory.createProcessor(transaction);
         let _ = processor.process();
     }
@@ -43,7 +43,7 @@ mod tests {
     fn test_block_transaction_manager_new() {
         let block_transaction_manager = BlockTransactionManager::new(MockTransactionProcessorFactory::new());
         let transaction = vec![1,2,3,4,5,6];
-        block_transaction_manager.process(transaction);
+        block_transaction_manager.process(&transaction);
     }
 
 }

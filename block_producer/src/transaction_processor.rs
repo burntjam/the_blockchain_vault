@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::sync::{Arc,Mutex};
 use config_lib::ChainConfig;
 use peer2peer_protocol::server::transaction;
@@ -7,55 +8,67 @@ use async_trait::async_trait;
 use std::future::Future;
 use std::pin::Pin;
 use crate::tangle_manager::TangleManager;
+use crate::{action_executor, ActionExecutor, ActionManager, Contract, ContractManager, TransactionError};
 use asn1_lib::{Transaction,TransactionWrapper, SignedTransaction, SignedChangeSet, ChangeSet};
 
 
 
 #[async_trait]
-pub trait TransactionProcessor {
-    async fn process(&self);
+pub trait TransactionProcessor: Sync + Send {
+    async fn process(&self) -> Result<(), Box<dyn std::error::Error>>;
 }
 
 pub struct BlockTransactionProcessor {
     transaction: Vec<u8>,
     session_factory: Arc<Mutex<dyn StoreSessionFactory>>,
     tangle_manager: Arc<Mutex<dyn TangleManager>>,
+    contract_manager: Arc<Mutex<dyn ContractManager>>,
+    action_manager: Arc<Mutex<dyn ActionManager>>,
 }
 
 impl BlockTransactionProcessor {
-    pub fn new(transaction: Vec<u8>, session_factory: Arc<Mutex<dyn StoreSessionFactory>>, tangle_manager: Arc<Mutex<dyn TangleManager>>) -> Arc<dyn TransactionProcessor> {
+    pub fn new(transaction: &Vec<u8>, session_factory: &Arc<Mutex<dyn StoreSessionFactory>>, 
+        tangle_manager: &Arc<Mutex<dyn TangleManager>>, contract_manager: &Arc<Mutex<dyn ContractManager>>,
+        action_manager: &Arc<Mutex<dyn ActionManager>>) -> Arc<dyn TransactionProcessor> {
         let config = ChainConfig::new().unwrap();
-        Arc::new(BlockTransactionProcessor { transaction,  session_factory, tangle_manager}) as Arc<dyn TransactionProcessor>
+        Arc::new(BlockTransactionProcessor { transaction: transaction.clone(),  session_factory: session_factory.clone(), 
+            tangle_manager: tangle_manager.clone(), contract_manager: contract_manager.clone(),
+            action_manager: action_manager.clone()}) as Arc<dyn TransactionProcessor>
     }
     pub fn processTransactionMessage(&self, transactionMessage: &TransactionMessage) -> Result<(), Box<dyn std::error::Error>> {
         // check the account from the tangle manager
         let tangle_manager_ref = self.tangle_manager.lock().unwrap();
-
+        println!("Testing step 1");
         if !tangle_manager_ref.managed_transaction(transactionMessage)? {
             // route out
             return Ok(());
         }
-        
+        println!("Testing step 2");
         let account_id = transactionMessage.getAccountId().clone();
-        
+        println!("Testing step 3");
         let mut asnTransactionMessage = rasn::der::decode::<asn1_lib::TransactionMessage>(
             &transactionMessage.binary_transaction.clone()).unwrap();
-        let _ = self.processAsnTransactionMessage(&transactionMessage.transaction_type, &mut asnTransactionMessage);
+        println!("Testing step 4 : {}", asnTransactionMessage.transaction.signedTransaction.transaction.actions.len());
+        let _ = self.processAsnTransactionMessage(&transactionMessage.transaction_type, &mut asnTransactionMessage)?;
         Ok(())
     }
     fn processAsnTransactionMessage(&self, transaction_state: &String, transactionMessage: &mut asn1_lib::TransactionMessage) -> Result<(bool), Box<dyn std::error::Error>> {
-        transactionMessage.sideTransactions.iter_mut().all(|transaction: &mut asn1_lib::TransactionMessage|
+        println!("Before a run");
+        transactionMessage.sideTransactions.iter_mut().all(|transaction: &mut asn1_lib::TransactionMessage| {
+            println!("Looping through");
             self.processAsnTransactionMessage(transaction_state, transaction).unwrap()
-        );
+        });
         
-        let signedTransaction = rasn::der::decode::<asn1_lib::SignedTransaction>(
-            &transactionMessage.transaction.signature.clone()).unwrap();
+        let signedTransaction = 
+            transactionMessage.transaction.signedTransaction.clone();
         let changeSets: &mut Vec<SignedChangeSet> = &mut transactionMessage.transaction.changeSet;
         
-        signedTransaction.transaction.actions.iter().all(|action|
+        println!("Loop through the actions : {}",signedTransaction.transaction.actions.len());
+        signedTransaction.transaction.actions.iter().all(|action| {
+            println!("Process action");
             self.processAction(transaction_state, &signedTransaction, action, changeSets).unwrap()
-        );
-
+        });
+        println!("Return the result");
         Ok(true)
     }
     fn processAction(&self, transaction_state: &String, signedTransaction: &asn1_lib::SignedTransaction, action: &asn1_lib::Action, changeSets: &mut Vec<SignedChangeSet>) 
@@ -73,7 +86,20 @@ impl BlockTransactionProcessor {
             changes: Vec::new(),
         };
 
-        
+        let contract_manager_ref = self.contract_manager.lock().unwrap();
+        let contract: Arc<Mutex<dyn Contract>> = if let Some(value) = action.contract.clone() {
+            contract_manager_ref.get_contract(&value.to_vec())?
+        } else if let Some(value) = action.contractName.clone() {
+            contract_manager_ref.get_contract_by_name(&String::from_utf8(value.to_vec())
+                .map_err(|val|TransactionError{message:String::from("")})?)?
+        } else {
+            return Err(Box::new(TransactionError{message:String::from("")}));
+        };
+
+        println!("Before executing the action");
+        let action_executor = self.action_manager.lock().unwrap().create_action_executor(&contract)?;
+        action_executor.lock().unwrap().execute(transaction_state, &mut change_set);
+        println!("After execution");
 
         let signed_change_set = SignedChangeSet{
             changeSet: change_set,
@@ -88,37 +114,47 @@ impl BlockTransactionProcessor {
 
 #[async_trait]
 impl TransactionProcessor for BlockTransactionProcessor {
-    async fn process(&self) {
+    async fn process(&self) -> Result<(), Box<dyn std::error::Error>> {
+        println!("From process1");
         let message = deserialize_bin_message(&self.transaction);
+        println!("From process2");
         if message.is_err() {
-            return;
+            return Err(message.err().unwrap());
         }
+        println!("From processing");
         if let WebSocketMessage::Transaction(trans) = message.unwrap() {
+            println!("More processing");
             self.processTransactionMessage(&trans);
         }
+        Ok(())
     }
 }
 
 
 pub trait TransactionProcessorFactory : Sync + Send {
-    fn createProcessor(&self, transaction: Vec<u8>) -> Arc<dyn TransactionProcessor>;
+    fn createProcessor(&self, transaction: &Vec<u8>) -> Arc<dyn TransactionProcessor>;
 }
 
 pub struct BlockTransactionProcessorFactory{
     session_factory: Arc<Mutex<dyn StoreSessionFactory>>,
     tangle_manager: Arc<Mutex<dyn TangleManager>>,
+    contract_manager: Arc<Mutex<dyn ContractManager>>,
+    action_manager: Arc<Mutex<dyn ActionManager>>,
 }
 
 impl TransactionProcessorFactory for BlockTransactionProcessorFactory {
-    fn createProcessor(&self, transaction: Vec<u8>) -> Arc<dyn TransactionProcessor> {
-        BlockTransactionProcessor::new(transaction, self.session_factory.clone(), self.tangle_manager.clone())
+    fn createProcessor(&self, transaction: &Vec<u8>) -> Arc<dyn TransactionProcessor> {
+        BlockTransactionProcessor::new(transaction, &self.session_factory, &self.tangle_manager, &self.contract_manager, &self.action_manager)
     }
 }
 
 impl BlockTransactionProcessorFactory {
-    pub fn new(session_factory: Arc<Mutex<dyn StoreSessionFactory>>, tangle_manager: Arc<Mutex<dyn TangleManager>>) -> Arc<dyn TransactionProcessorFactory> {
+    pub fn new(session_factory: &Arc<Mutex<dyn StoreSessionFactory>>, tangle_manager: &Arc<Mutex<dyn TangleManager>>, 
+        contract_manager: &Arc<Mutex<dyn ContractManager>>, action_manager: &Arc<Mutex<dyn ActionManager>>) -> Arc<dyn TransactionProcessorFactory> {
         let config = ChainConfig::new().unwrap();
-        Arc::new(BlockTransactionProcessorFactory { session_factory, tangle_manager }) as Arc<dyn TransactionProcessorFactory>
+        Arc::new(BlockTransactionProcessorFactory { 
+            session_factory: session_factory.clone(), tangle_manager: tangle_manager.clone(), 
+            contract_manager: contract_manager.clone(), action_manager: action_manager.clone() }) as Arc<dyn TransactionProcessorFactory>
     }
 }
 
@@ -131,22 +167,182 @@ mod tests {
     use std::sync::{Mutex, Arc,mpsc};
     use rdf_lib::MockStoreSessionFactory;
     use crate::mock::MockTangleManager;
+    use crate::{Contract, MockActionManager};
+    use chrono::prelude::*;
 
 
-    #[test]
-    fn test_block_processor_new() -> Result<(), Box<dyn Error>> {
-        let transaction = vec![1,2,3,4,5,6];
+    pub struct TransactionMockContract;
+
+    impl TransactionMockContract {
+        pub fn new() -> Result<Arc<Mutex<dyn Contract>>,Box<dyn std::error::Error>> {
+            Ok(Arc::new(Mutex::new(TransactionMockContract{})))
+        }
+    }
+
+    impl Contract for TransactionMockContract {
+        fn contract_id(&self) -> Result<Vec<u8>,Box<dyn std::error::Error>> {
+            Ok(String::from("TEST").into_bytes())
+        }
+        fn contract(&self) -> Result<Vec<u8>,Box<dyn std::error::Error>> {
+            Ok(String::from("TEST").into_bytes())
+        }
+    }
+
+    pub struct TransactionMockContractManager;
+    
+    impl TransactionMockContractManager {
+        pub fn new() -> Result<Arc<Mutex<dyn ContractManager>>,Box<dyn std::error::Error>> {
+            Ok(Arc::new(Mutex::new(TransactionMockContractManager {})) as Arc<Mutex<dyn ContractManager>>)
+        }
+    }
+    
+    impl ContractManager for TransactionMockContractManager {
+        fn get_contract(&self,contract_id: &Vec<u8>) -> Result<Arc<Mutex<dyn Contract>>,Box<dyn std::error::Error>> {
+            Ok(TransactionMockContract::new()?)
+        }
+        fn get_contract_by_name(&self,contract_name: &String) -> Result<Arc<Mutex<dyn Contract>>,Box<dyn std::error::Error>> {
+            Ok(TransactionMockContract::new()?)
+        }
+    }
+
+    fn create_transaciton() -> Vec<u8> {
+        
+        let date: DateTime<Utc> = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap();
+        let integer = 42u8; // Using a simple integer for this example
+
+        let encoded_integer = rasn::der::encode(&integer).expect("Failed to encode integer");
+        let asn1_action = asn1_lib::Action{
+            version:1,
+            date: date.clone(),
+            contract: None,
+            contractName: Some(rasn::types::OctetString::from("test")),
+            parent: rasn::types::OctetString::from("parent"),
+            model: rasn::types::Any::new(encoded_integer),
+        };
+
+        // this logic is here to confirm that the any in the model is getting serialized correctly
+        let encoded_action_result = rasn::der::encode::<asn1_lib::Action>(
+            &asn1_action);
+        if encoded_action_result.is_err() {
+            let error = encoded_action_result.unwrap_err();
+            println!("An error occurred while encoding the message : {}",error.to_string());
+            return vec![];
+        }
+        let mut asn1_action_copy_result = rasn::der::decode::<asn1_lib::Action>(
+                &encoded_action_result.unwrap());
+        if asn1_action_copy_result.is_err() {
+            let error = asn1_action_copy_result.unwrap_err();
+            println!("An error occurred while encoding the message : {}",error.to_string());
+            return vec![];
+        }
+        let mut asn1_action_copy = asn1_action_copy_result.unwrap();
+        println!("Contract name [{}][{}]",asn1_action.parent.escape_ascii().to_string(),
+            asn1_action_copy.parent.escape_ascii().to_string());
+
+        let asn1_transaction = asn1_lib::Transaction{
+            version:1,
+            date: date,
+            value:1000,
+            parent: rasn::types::OctetString::from("parent"),
+            encrypted: false,
+            sourceAccount: rasn::types::OctetString::from("sourceAccount"),
+            targetAccount: rasn::types::OctetString::from("targetAccount"),
+            transactionSignator: rasn::types::OctetString::from("transactionSignator"),
+            creatorId: rasn::types::OctetString::from("creatorId"),
+            actions: rasn::types::SequenceOf::from(vec![asn1_action.clone()]), 
+        };
+        println!("The length of actions is {}",asn1_transaction.actions.len());
+        let asn1_signed_transaction = asn1_lib::SignedTransaction {
+            version: 1,
+            transaction: asn1_transaction,
+            transactionHash: rasn::types::OctetString::from("transactionHash"),
+            signature: rasn::types::OctetString::from("signature"),
+        };
+        println!("The length of actions is {}",asn1_signed_transaction.transaction.actions.len());
+        let asn1_transaction_wrapper = asn1_lib::TransactionWrapper{
+            version: 1,
+            sourceAccount: rasn::types::OctetString::from("source"), 
+            targetAccount: rasn::types::OctetString::from("target"),
+            parent: rasn::types::OctetString::from("parent"),
+            feeAccount: rasn::types::OctetString::from("feeAccount"),
+            transactionHash: rasn::types::OctetString::from("feeAccount"),
+            signature: rasn::types::OctetString::from("signature"),
+            signedTransaction: asn1_signed_transaction,
+            transactionTrace: Vec::new(),
+            currentStatus: asn1_lib::Status::init,
+            changeSet: Vec::new()
+        };
+        println!("The length of actions is {}",asn1_transaction_wrapper.signedTransaction.transaction.actions.len());
+        let asn1_transaction= asn1_lib::TransactionMessage{
+            version: 1,
+            transaction: asn1_transaction_wrapper,
+            availableTime: 1,
+            elapsedTime: 0,
+            sideTransactions: Vec::new(),
+            encryptedSideTransactions: Vec::new()};
+        println!("The length of actions is {}",asn1_transaction.transaction.signedTransaction.transaction.actions.len());
+        let encoded_transaction = rasn::der::encode::<asn1_lib::TransactionMessage>(
+            &asn1_transaction).unwrap();
+        let mut asnTransactionMessage = rasn::der::decode::<asn1_lib::TransactionMessage>(
+                &encoded_transaction).unwrap();
+        println!("The length of actions is {}",asnTransactionMessage.transaction.signedTransaction.transaction.actions.len());
+        println!("The to string of creator {}",asnTransactionMessage.transaction.signedTransaction.transaction.creatorId.escape_ascii().to_string());
+        return peer2peer_protocol::serialize_message(&WebSocketMessage::Transaction(peer2peer_protocol::TransactionMessage{
+            source_account_id: String::from("source"),
+            target_account_id: String::from("target"),
+            transaction_type: String::from("credit"), 
+            binary_transaction: encoded_transaction})).unwrap().into_bytes();
+
+    }
+
+    pub struct TransactionMockTangleManager;
+
+
+    impl TangleManager for TransactionMockTangleManager {
+        fn managed_transaction(&self, transaction: &TransactionMessage) -> Result<bool,Box<dyn std::error::Error>> {
+            Ok(true)
+        }
+        fn create_tangle(&self,account_ids: &Vec<Vec<u8>>) -> Result<Arc<Mutex<dyn crate::Tangle>>,Box<dyn std::error::Error>> {
+            Ok(crate::mock::MockTangle::new()?)
+        }
+        fn get_tangle(&self,tangle_id: &Vec<u8>) -> Result<Arc<Mutex<dyn crate::Tangle>>,Box<dyn std::error::Error>> {
+            Ok(crate::mock::MockTangle::new()?)
+        }
+        fn get_active_tangle(&self) -> Result<Option<Arc<Mutex<dyn crate::Tangle>>>,Box<dyn std::error::Error>> {
+            Ok(Option::None)
+        }
+        fn set_active_tangle(&mut self,tangle_id: &Vec<u8>) -> Result<Option<Arc<Mutex<dyn crate::Tangle>>>,Box<dyn std::error::Error>> {
+            Ok(Option::None)
+        }
+    }
+
+    impl TransactionMockTangleManager {
+        pub fn new() -> Result<Arc<Mutex<dyn TangleManager>>,Box<dyn std::error::Error>> {
+            Ok(Arc::new(Mutex::new(TransactionMockTangleManager { })) as Arc<Mutex<dyn TangleManager>>)
+        }
+    }
+
+
+    #[tokio::test]
+    async fn test_block_processor_new() -> Result<(), Box<dyn Error>> {
+        let transaction = create_transaciton();
         let transaction_processor = BlockTransactionProcessor::new(
-            transaction, MockStoreSessionFactory::new()?, MockTangleManager::new()?);
-        transaction_processor.process();
+            &transaction, &MockStoreSessionFactory::new()?, 
+            &TransactionMockTangleManager::new()?, &TransactionMockContractManager::new()?,
+            &MockActionManager::new()?);
+        let _ = transaction_processor.process().await?;
         Ok(())
     }
 
-    #[test]
-    fn test_block_transaction_processor_factory_new() -> Result<(), Box<dyn Error>> {
-        let transaction = vec![1,2,3,4,5,6];
-        BlockTransactionProcessorFactory::new(MockStoreSessionFactory::new()?, MockTangleManager::new()?)
-            .createProcessor(transaction).process();
+    #[tokio::test]
+    async fn test_block_transaction_processor_factory_new() -> Result<(), Box<dyn Error>> {
+        let transaction = create_transaciton();
+        let _ = BlockTransactionProcessorFactory::new(
+            &MockStoreSessionFactory::new()?, 
+            &TransactionMockTangleManager::new()?,
+            &TransactionMockContractManager::new()?,
+            &MockActionManager::new()?)
+            .createProcessor(&transaction).process().await?;
         Ok(())
     }
 }

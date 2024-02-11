@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
+futures = "0.3.30"
 asn1_lib = { path="../asn1_lib"}
 environment_lib = { path="../environment_lib"}
 config_lib = { path="../config_lib"}
@@ -13,6 +14,7 @@ spool_client = { path="../spool_client"}
 oxigraph = "0.3.20"
 peer2peer_protocol = { path="../peer2peer_protocol"}
 rdf_lib = { path="../rdf_lib"}
+rdf_store_client = { path="../rdf_store_client"}
 async-trait = "0.1.76"
 chrono = "0.4"
 rasn = "0.7.0"
