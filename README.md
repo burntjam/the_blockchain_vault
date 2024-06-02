@@ -1,1 +1,2 @@
-# crypto_data_vault
+# the blockchain vault
+This project aims to develop a blockchain master data store. It is developed using a blockchain based transaction store that then applies changes to an RDF or graph store. This means the blockchain transactions provide an audit trail of the current state of the graph store. Having an RDF graph store rather an an RDBM's makes the data dynamic and means that at query time different schemas can be applied to affect the view on the data store.
