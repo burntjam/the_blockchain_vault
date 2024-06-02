@@ -1,16 +1,24 @@
 use std::io::Read;
 use std::sync::{Arc,Mutex};
+use std::thread::sleep;
 use config_lib::ChainConfig;
 use peer2peer_protocol::server::transaction;
-use peer2peer_protocol::{deserialize_bin_message, WebSocketMessage, handler::message, TransactionMessage};
+use peer2peer_protocol::{deserialize_bin_message,serialize_bin_message, WebSocketMessage, handler::message, TransactionMessage};
 use rdf_lib::{StoreSessionFactory};
 use async_trait::async_trait;
 use std::future::Future;
 use std::pin::Pin;
 use crate::tangle_manager::TangleManager;
-use crate::{action_executor, ActionExecutor, ActionManager, Contract, ContractManager, TransactionError};
-use asn1_lib::{Transaction,TransactionWrapper, SignedTransaction, SignedChangeSet, ChangeSet};
+use crate::{action_executor, producer_client_manager, ActionExecutor, ActionManager, Contract, ContractManager, ProducerClientManager, TransactionError};
+use asn1_lib::{ChangeSet, SignedChangeSet, SignedTransaction, Status, Transaction, TransactionWrapper};
+use block_producer_client::transaction_processor_client::TransactionProcessorClient;
+use block_producer_client::transaction_processor_client_manager::TransactionProcessorClientManager;
 
+
+fn parse_octet_string(source: &rasn::types::OctetString) -> Result<String, Box<dyn std::error::Error>> {
+    std::str::from_utf8(source).map(|s|s.to_string()).
+        map_err(|e| Box::new(TransactionError{message:String::from("")}) as Box<dyn std::error::Error>)
+}
 
 
 #[async_trait]
@@ -24,16 +32,20 @@ pub struct BlockTransactionProcessor {
     tangle_manager: Arc<Mutex<dyn TangleManager>>,
     contract_manager: Arc<Mutex<dyn ContractManager>>,
     action_manager: Arc<Mutex<dyn ActionManager>>,
+    producer_client_manager: Arc<Mutex<dyn ProducerClientManager>>,
+    transaction_processor_client_manager: Arc<dyn TransactionProcessorClientManager>,
 }
 
 impl BlockTransactionProcessor {
     pub fn new(transaction: &Vec<u8>, session_factory: &Arc<Mutex<dyn StoreSessionFactory>>, 
         tangle_manager: &Arc<Mutex<dyn TangleManager>>, contract_manager: &Arc<Mutex<dyn ContractManager>>,
-        action_manager: &Arc<Mutex<dyn ActionManager>>) -> Arc<dyn TransactionProcessor> {
+        action_manager: &Arc<Mutex<dyn ActionManager>>, producer_client_manager: &Arc<Mutex<dyn ProducerClientManager>>,
+        transaction_processor_client_manager: &Arc<dyn TransactionProcessorClientManager>) -> Arc<dyn TransactionProcessor> {
         let config = ChainConfig::new().unwrap();
         Arc::new(BlockTransactionProcessor { transaction: transaction.clone(),  session_factory: session_factory.clone(), 
             tangle_manager: tangle_manager.clone(), contract_manager: contract_manager.clone(),
-            action_manager: action_manager.clone()}) as Arc<dyn TransactionProcessor>
+            action_manager: action_manager.clone(), producer_client_manager: producer_client_manager.clone(),
+            transaction_processor_client_manager: transaction_processor_client_manager.clone()}) as Arc<dyn TransactionProcessor>
     }
     pub fn processTransactionMessage(&self, transactionMessage: &TransactionMessage) -> Result<(), Box<dyn std::error::Error>> {
         // check the account from the tangle manager
@@ -50,6 +62,14 @@ impl BlockTransactionProcessor {
             &transactionMessage.binary_transaction.clone()).unwrap();
         println!("Testing step 4 : {}", asnTransactionMessage.transaction.signedTransaction.transaction.actions.len());
         let _ = self.processAsnTransactionMessage(&transactionMessage.transaction_type, &mut asnTransactionMessage)?;
+        let producer_client_manager = self.producer_client_manager.lock().unwrap();
+        let producer_client = producer_client_manager.create_producer_client()?;
+        let producer_client_ref = producer_client.lock().unwrap();
+        let _ = producer_client_ref.submit_transaction(&transactionMessage.source_account_id, 
+            &transactionMessage.target_account_id, &transactionMessage.transaction_type, &asnTransactionMessage)?;
+
+        self.incrementTransaction(&mut asnTransactionMessage)?;
+        
         Ok(())
     }
     fn processAsnTransactionMessage(&self, transaction_state: &String, transactionMessage: &mut asn1_lib::TransactionMessage) -> Result<(bool), Box<dyn std::error::Error>> {
@@ -109,6 +129,26 @@ impl BlockTransactionProcessor {
         changeSets.push(signed_change_set);
         Ok(true)
     }
+
+    fn incrementTransaction(&self, asnTransactionMessage: &mut asn1_lib::TransactionMessage) -> Result<(), Box<dyn std::error::Error>> {
+        // we need to move the transction onto the next leg and create a new transaction message
+        if asnTransactionMessage.transaction.currentStatus != Status::debit {
+            return Ok(());
+        }
+        asnTransactionMessage.transaction.currentStatus = Status::credit;
+        let bin_transaction = rasn::der::encode::<asn1_lib::TransactionMessage>(
+            &asnTransactionMessage).unwrap();
+        
+        let transction_message = WebSocketMessage::Transaction(TransactionMessage::new(
+            parse_octet_string(&asnTransactionMessage.transaction.sourceAccount)?, 
+            parse_octet_string(&asnTransactionMessage.transaction.targetAccount)?, 
+            peer2peer_protocol::CREDIT_TYPE.to_string().clone(), bin_transaction));
+        
+        self.transaction_processor_client_manager.create()?.
+            submit_transaction(&serialize_bin_message(&transction_message)?)?;
+
+        Ok(())
+    }
 }
 
 
@@ -140,21 +180,28 @@ pub struct BlockTransactionProcessorFactory{
     tangle_manager: Arc<Mutex<dyn TangleManager>>,
     contract_manager: Arc<Mutex<dyn ContractManager>>,
     action_manager: Arc<Mutex<dyn ActionManager>>,
+    producer_client_manager: Arc<Mutex<dyn ProducerClientManager>>,
+    transaction_processor_client_manager: Arc<dyn TransactionProcessorClientManager>,
 }
 
 impl TransactionProcessorFactory for BlockTransactionProcessorFactory {
     fn createProcessor(&self, transaction: &Vec<u8>) -> Arc<dyn TransactionProcessor> {
-        BlockTransactionProcessor::new(transaction, &self.session_factory, &self.tangle_manager, &self.contract_manager, &self.action_manager)
+        BlockTransactionProcessor::new(transaction, &self.session_factory, &self.tangle_manager, &self.contract_manager, &self.action_manager, &self.producer_client_manager,
+            &self.transaction_processor_client_manager)
     }
 }
 
 impl BlockTransactionProcessorFactory {
     pub fn new(session_factory: &Arc<Mutex<dyn StoreSessionFactory>>, tangle_manager: &Arc<Mutex<dyn TangleManager>>, 
-        contract_manager: &Arc<Mutex<dyn ContractManager>>, action_manager: &Arc<Mutex<dyn ActionManager>>) -> Arc<dyn TransactionProcessorFactory> {
+        contract_manager: &Arc<Mutex<dyn ContractManager>>, action_manager: &Arc<Mutex<dyn ActionManager>>,
+        producer_client_manager: &Arc<Mutex<dyn ProducerClientManager>>,
+        transaction_processor_client_manager: &Arc<dyn TransactionProcessorClientManager>) -> Arc<dyn TransactionProcessorFactory> {
         let config = ChainConfig::new().unwrap();
         Arc::new(BlockTransactionProcessorFactory { 
             session_factory: session_factory.clone(), tangle_manager: tangle_manager.clone(), 
-            contract_manager: contract_manager.clone(), action_manager: action_manager.clone() }) as Arc<dyn TransactionProcessorFactory>
+            contract_manager: contract_manager.clone(), action_manager: action_manager.clone(),
+            producer_client_manager: producer_client_manager.clone(),
+            transaction_processor_client_manager: transaction_processor_client_manager.clone() }) as Arc<dyn TransactionProcessorFactory>
     }
 }
 
@@ -167,8 +214,9 @@ mod tests {
     use std::sync::{Mutex, Arc,mpsc};
     use rdf_lib::MockStoreSessionFactory;
     use crate::mock::MockTangleManager;
-    use crate::{Contract, MockActionManager};
+    use crate::{Contract, MockActionManager, MockProducerClientManager};
     use chrono::prelude::*;
+    use block_producer_client::mock::{MockTransactionProcessorClientManager};
 
 
     pub struct TransactionMockContract;
@@ -329,7 +377,8 @@ mod tests {
         let transaction_processor = BlockTransactionProcessor::new(
             &transaction, &MockStoreSessionFactory::new()?, 
             &TransactionMockTangleManager::new()?, &TransactionMockContractManager::new()?,
-            &MockActionManager::new()?);
+            &MockActionManager::new()?, &MockProducerClientManager::new()?,
+            &MockTransactionProcessorClientManager::new());
         let _ = transaction_processor.process().await?;
         Ok(())
     }
@@ -341,7 +390,9 @@ mod tests {
             &MockStoreSessionFactory::new()?, 
             &TransactionMockTangleManager::new()?,
             &TransactionMockContractManager::new()?,
-            &MockActionManager::new()?)
+            &MockActionManager::new()?,
+            &MockProducerClientManager::new()?,
+            &MockTransactionProcessorClientManager::new())
             .createProcessor(&transaction).process().await?;
         Ok(())
     }

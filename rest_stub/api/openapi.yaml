@@ -1,0 +1,233 @@
+openapi: 3.0.1
+info:
+  title: Diagram and Entity Management API
+  version: 1.0.0
+servers:
+- url: /
+paths:
+  /graphs:
+    get:
+      responses:
+        "200":
+          content: {}
+          description: A list of graphs.
+      summary: List all graphs.
+    post:
+      responses:
+        "200":
+          content: {}
+          description: Graph created successfully.
+      summary: Create a new graph.
+  /graphs/{id}:
+    delete:
+      parameters:
+      - description: Unique identifier of the graph.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Graph deleted successfully.
+      summary: Delete a graph.
+    get:
+      parameters:
+      - description: Unique identifier of the graph.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Graph details.
+      summary: Retrieve a specific graph.
+    put:
+      parameters:
+      - description: Unique identifier of the graph.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Graph updated successfully.
+      summary: Update an existing graph.
+  /entities:
+    get:
+      responses:
+        "200":
+          content: {}
+          description: A list of entities.
+      summary: List all entities in a specific diagram.
+    post:
+      responses:
+        "200":
+          content: {}
+          description: Entity added successfully.
+      summary: Add a new entity to a diagram.
+  /entities/{id}:
+    delete:
+      parameters:
+      - description: Unique identifier of the entity.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Entity removed successfully.
+      summary: Remove an entity from a diagram.
+    get:
+      parameters:
+      - description: Unique identifier of the entity.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Entity details.
+      summary: Retrieve a specific entity.
+    put:
+      parameters:
+      - description: Unique identifier of the entity.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Entity updated successfully.
+      summary: Update an existing entity.
+  /relationships:
+    get:
+      responses:
+        "200":
+          content: {}
+          description: A list of relationships.
+      summary: List all relationships in a diagram.
+    post:
+      responses:
+        "200":
+          content: {}
+          description: Relationship created successfully.
+      summary: Create a new relationship between two entities.
+  /relationships/{id}:
+    delete:
+      parameters:
+      - description: Unique identifier of the relationship.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Relationship deleted successfully.
+      summary: Delete a relationship.
+    get:
+      parameters:
+      - description: Unique identifier of the relationship.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Relationship details.
+      summary: Retrieve a specific relationship.
+    put:
+      parameters:
+      - description: Unique identifier of the relationship.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Relationship updated successfully.
+      summary: Update an existing relationship.
+  /sparql/query:
+    post:
+      responses:
+        "200":
+          content: {}
+          description: Query executed successfully and results returned.
+      summary: Execute a SPARQL query against the underlying RDF data store and return
+        the results.
+  /diagrams/{id}/export:
+    post:
+      parameters:
+      - description: Unique identifier of the diagram to be exported.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: Diagram exported successfully.
+      summary: Export a diagram to a desired format.
+  /diagrams/import:
+    post:
+      responses:
+        "200":
+          content: {}
+          description: Diagram imported successfully.
+      summary: Import a diagram from an RDF source.
+  /admin/users:
+    get:
+      responses:
+        "200":
+          content: {}
+          description: List of users retrieved successfully.
+      summary: Get a list of users (for admin users).
+  /admin/users/{id}:
+    delete:
+      parameters:
+      - description: Unique identifier of the user.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: User deleted successfully.
+      summary: Delete a user (for admin users).
+    put:
+      parameters:
+      - description: Unique identifier of the user.
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content: {}
+          description: User updated successfully.
+      summary: Update user roles or permissions (for admin users).
+components:
+  schemas: {}
+x-original-swagger-version: "2.0"
+

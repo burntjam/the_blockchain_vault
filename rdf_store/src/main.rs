@@ -5,6 +5,8 @@ mod query_processor_manager;
 mod mock_query_processor;
 mod mock_query_processor_manager;
 mod query_consumer;
+mod block_consumer;
+mod block_processor;
 
 
 use config_lib::ChainConfig;
@@ -15,6 +17,8 @@ use query_processor_manager::*;
 use mock_query_processor::*;
 use mock_query_processor_manager::*;
 use query_consumer::*;
+use block_consumer::*;
+use block_processor::*;
 use spool_client::*;
 use tokio::join;
 

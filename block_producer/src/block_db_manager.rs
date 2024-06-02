@@ -7,7 +7,7 @@ use std::fs;
 use std::io;
 use rdf_lib::{OxigraphStoreManager,OxigraphSessionFactory,StoreManager,StoreSessionFactory};
 
-pub trait DbManager {
+pub trait DbManager: Sync + Send {
     fn sessionFactory(&self) -> Result<Arc<Mutex<dyn StoreSessionFactory>>,Box<dyn std::error::Error>>;
 }
 

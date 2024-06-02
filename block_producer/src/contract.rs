@@ -122,6 +122,9 @@ mod tests {
 
             Ok(RdfResultSet{column_headings,rows:rows})
         }
+        async fn persist_signed_block(&self, signed_block: &Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
+            Ok(())
+        }
     }
 
     pub struct ContractMockStoreClientManager;

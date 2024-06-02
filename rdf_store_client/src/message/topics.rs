@@ -1,1 +1,2 @@
 pub const RDF_STORE_TOPIC: &str = "RDF_STORE";
+pub const RDF_STORE_PERSIST_BLOCK_TOPIC: &str = "RDF_STORE_PERSIST_BLOCK";

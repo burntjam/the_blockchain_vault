@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use crate::{StoreClient};
+use crate::{RdfSignedBlock, StoreClient};
 use config_lib::ChainConfig;
 use std::sync::{Arc,Mutex};
 use rdf_lib::store_result_set::*;
@@ -37,6 +37,14 @@ impl StoreClient for SpoolStoreClient {
             }
         }
         Ok(RdfResultSet{column_headings:vec![],rows:vec![]})
+    }
+
+    async fn persist_signed_block(&self, signed_block: &Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
+        let rdf_signed_block = RdfSignedBlock::new(signed_block)?;
+        let rdf_signed_block_message = serde_json::to_string(&rdf_signed_block)?;
+        let spool_connection = self.spool_manager.create_connection(&crate::RDF_STORE_PERSIST_BLOCK_TOPIC.to_string()).await?;
+        spool_connection.push(rdf_signed_block_message.into_bytes()).await?;
+        Ok(())
     }
 }
 

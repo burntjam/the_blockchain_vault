@@ -1,4 +1,6 @@
 use rasn::*;
+use chrono::prelude::*;
+use chrono::DateTime;
 
 // Also valid
 #[derive(AsnType,Clone)]
@@ -180,6 +182,21 @@ pub struct SoftwareConsensus {
     pub signature:       rasn::types::OctetString,
 }
 
+impl SoftwareConsensus {
+    pub fn blank_software_consensus() -> SoftwareConsensus {
+        SoftwareConsensus {
+            version: 1,
+            date: Utc::now(),
+            previousHash: rasn::types::OctetString::from(""),
+            account: rasn::types::OctetString::from(""),
+            seed: rasn::types::OctetString::from(""),
+            systemHashs: Vec::new(),
+            merkelRoot: rasn::types::OctetString::from(""),
+            signature: rasn::types::OctetString::from(""),
+        }
+    }
+}
+
 
 #[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
@@ -193,6 +210,20 @@ pub struct Block {
     pub merkelRoot:         rasn::types::OctetString
 }
 
+impl Block {
+    pub fn blank_block() -> Block {
+        Block {
+            version: 1,
+            date: Utc::now(),
+            parent: rasn::types::OctetString::from(""),
+            transactions: Vec::new(),
+            acceptedCheck: SoftwareConsensus::blank_software_consensus(),
+            validateCheck: SoftwareConsensus::blank_software_consensus(),
+            merkelRoot: rasn::types::OctetString::from(""),
+        }
+    }
+}
+
 #[derive(AsnType,Clone, Decode, Debug, Encode, PartialEq)]
 #[rasn(automatic_tags)]
 pub struct SignedBlock {
@@ -202,6 +233,19 @@ pub struct SignedBlock {
     pub block:              Block,
     pub hash:               rasn::types::OctetString,
     pub signatures:         rasn::types::SequenceOf<rasn::types::OctetString>,
+}
+
+impl SignedBlock {
+    pub fn new(block: &Block) -> SignedBlock {
+        SignedBlock {
+            version: 1,
+            date: Utc::now(),
+            parent: rasn::types::OctetString::from(""),
+            block: block.clone(),
+            hash: rasn::types::OctetString::from(""),
+            signatures: Vec::new(),
+        }
+    }
 }
 
 
@@ -252,6 +296,17 @@ pub struct RDFNT {
     pub ntSubject:          rasn::types::OctetString,
     pub ntPredicate:        rasn::types::OctetString,
     pub ntObject:           rasn::types::OctetString,
+}
+
+impl RDFNT {
+    pub fn new(ntSubject: &String, ntPredicate: &String, ntObject: &String) -> RDFNT {
+        RDFNT {
+            version: 1,
+            ntSubject: rasn::types::OctetString::from(ntSubject.clone()),
+            ntPredicate: rasn::types::OctetString::from(ntPredicate.clone()),
+            ntObject: rasn::types::OctetString::from(ntObject.clone()),
+        }
+    }
 }
 
 

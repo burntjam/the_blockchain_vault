@@ -19,4 +19,8 @@ impl StoreClient for MockStoreClient {
     async fn query_async(&self, query: &String) -> Result<RdfResultSet, Box<dyn std::error::Error>> {
         Ok(RdfResultSet{column_headings:vec![],rows:vec![]})
     }
+    async fn persist_signed_block(&self, signed_block: &Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
+
+        Ok(())
+    }
 }

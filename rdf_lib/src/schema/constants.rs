@@ -93,6 +93,7 @@ pub enum RDFBlock {
     INCLUDES_TRANSACTIONS,
     TANGLE,
     TANGLE_ID,
+    DATA_BLOB,
 }
 
 impl fmt::Display for RDFBlock {
@@ -105,6 +106,7 @@ impl fmt::Display for RDFBlock {
             RDFBlock::INCLUDES_TRANSACTIONS => "blockchain#includesTransaction",
             RDFBlock::TANGLE => "blockchain#blockTangle",
             RDFBlock::TANGLE_ID => "blockchain#blockTangleId",
+            RDFBlock::DATA_BLOB => "blockchain#dataBlob",
         };
         write!(f, "{}{}", SCHEMA_BASE, base_str)
     }
