@@ -42,19 +42,19 @@ impl DiskBlockProcessor {
 #[async_trait]
 impl BlockProcessor for DiskBlockProcessor {
     async fn process(&self, block_bin: &Vec<u8>) -> Result<(),Box<dyn std::error::Error>> {
-        let block = rasn::der::decode::<asn1_lib::SignedBlock>(&block_bin).unwrap();
+        let signed_block = rasn::der::decode::<asn1_lib::SignedBlock>(&block_bin).unwrap();
 
-        let signed_block_hash = generate_hash_string(&block_bin);
+        
+        let blockSubject = format!("{}/{}",rdf_lib::RDFBlock::ID.to_string(),&hex::encode(&signed_block.hash));
+        let mut trippels = vec![
+            asn1_lib::RDFNT::new(&blockSubject, &rdf_lib::RDFBlock::ID.to_string(), &hex::encode(&signed_block.hash)),
+            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::MERKLE_TREE_ROOT.to_string(), &hex::encode(&signed_block.block.merkelRoot)),
+            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::TANGLE.to_string(), &hex::encode(&signed_block.tangle_hash)),
+            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::TANGLE_ID.to_string(), &hex::encode(&signed_block.tangle_hash)),
+            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::DATA_BLOB.to_string(), &hex::encode(&block_bin)),];
 
-        let blockSubject = format!("{}/{}",rdf_lib::RDFBlock::ID.to_string(),signed_block_hash.clone());
-        let trippels = vec![
-            asn1_lib::RDFNT::new(&blockSubject, &rdf_lib::RDFBlock::ID.to_string(), &signed_block_hash),
-            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::MERKLE_TREE_ROOT.to_string(), &hex::encode(tree.root_hash())),
-            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::TANGLE.to_string(), &self.id),
-            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::TANGLE_ID.to_string(), &self.id),
-            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::DATA_BLOB.to_string(), &hex::encode(block_bin.clone())),];
-
-        let sessionFactory = self.block_db_manager.sessionFactory()?;
+        
+        let sessionFactory = self.disk_store_manager.get_session_factory()?;
         let sessionFactory = sessionFactory.lock().unwrap();
         let session = sessionFactory.createSession()?;
         let session = session.lock().unwrap();

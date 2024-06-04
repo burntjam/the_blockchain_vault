@@ -49,6 +49,7 @@ impl BlockTangleProducer {
         let session = sessionFactory.createSession()?;
         let session = session.lock().unwrap();
         
+        //session.query("");
 
 
         Ok(Arc::new(BlockTangleProducer {id: id.clone(), current_block: Arc::new(Mutex::new(id.clone())) , transactions: Arc::new(Mutex::new(Vec::new())), 
@@ -99,7 +100,8 @@ impl TangleProducer for BlockTangleProducer {
 
         let mut signed_block = asn1_lib::SignedBlock::new(&block);
 
-        
+        signed_block.hash = rasn::types::OctetString::from(block_hash.clone());
+        signed_block.tangle_hash = rasn::types::OctetString::from(self.id.clone());
         
         
         let signed_block_bin = rasn::der::encode::<asn1_lib::SignedBlock>(&signed_block).unwrap();
@@ -109,9 +111,9 @@ impl TangleProducer for BlockTangleProducer {
         let trippels = vec![
             asn1_lib::RDFNT::new(&blockSubject, &rdf_lib::RDFBlock::ID.to_string(), &block_hash_hex),
             asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::MERKLE_TREE_ROOT.to_string(), &hex::encode(tree.root_hash())),
-            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::TANGLE.to_string(), &hex::encode(&self.id)),
-            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::TANGLE_ID.to_string(), &hex::encode(&self.id)),
-            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::DATA_BLOB.to_string(), &hex::encode(signed_block_bin.clone())),];
+            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::TANGLE.to_string(), &hex::encode(&signed_block.tangle_hash)),
+            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::TANGLE_ID.to_string(), &hex::encode(&signed_block.tangle_hash)),
+            asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::DATA_BLOB.to_string(), &hex::encode(&signed_block_bin)),];
 
         let sessionFactory = self.block_db_manager.sessionFactory()?;
         let sessionFactory = sessionFactory.lock().unwrap();
