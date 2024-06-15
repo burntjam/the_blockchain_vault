@@ -4,7 +4,7 @@
 #[allow(unused_imports)]
 use futures::{future, Stream, stream};
 #[allow(unused_imports)]
-use openapi_client::{Api, ApiNoContext, Client, ContextWrapperExt, models,
+use rest_stub::{Api, ApiNoContext, Client, ContextWrapperExt, models,
                       AdminUsersGetResponse,
                       AdminUsersIdDeleteResponse,
                       AdminUsersIdPutResponse,

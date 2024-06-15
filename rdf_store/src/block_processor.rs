@@ -53,6 +53,22 @@ impl BlockProcessor for DiskBlockProcessor {
             asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::TANGLE_ID.to_string(), &hex::encode(&signed_block.tangle_hash)),
             asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::DATA_BLOB.to_string(), &hex::encode(&block_bin)),];
 
+        signed_block.block.transactions.iter().for_each(|transaction| {
+            let transaction_blob = rasn::der::encode::<asn1_lib::TransactionWrapper>(transaction).unwrap();
+            let transaction_tripples = vec![
+                asn1_lib::RDFNT::new(&blockSubject, &rdf_lib::RDFTransaction::ID.to_string(), &hex::encode(&transaction.signedTransaction.transactionHash)),
+                asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFTransaction::DEBIT_ACCOUNT.to_string(), &hex::encode(&transaction.sourceAccount)),
+                asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFTransaction::DEBIT_ACCOUNT_ID.to_string(), &hex::encode(&transaction.sourceAccount)),
+                asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFTransaction::CREDIT_ACCOUNT.to_string(), &hex::encode(&transaction.targetAccount)),
+                asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFTransaction::CREDIT_ACCOUNT_ID.to_string(), &hex::encode(&transaction.targetAccount)),
+                asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFTransaction::VALUE.to_string(), &format!("{}",&transaction.signedTransaction.transaction.value)),
+                asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFTransaction::VALUE.to_string(), &format!("{}",&transaction.signedTransaction.transaction.value)),
+
+                asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::TANGLE.to_string(), &hex::encode(&signed_block.tangle_hash)),
+                asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::TANGLE_ID.to_string(), &hex::encode(&signed_block.tangle_hash)),
+                asn1_lib::RDFNT::new(&blockSubject, &&rdf_lib::RDFBlock::DATA_BLOB.to_string(), &hex::encode(&block_bin)),];
+        });
+
         
         let sessionFactory = self.disk_store_manager.get_session_factory()?;
         let sessionFactory = sessionFactory.lock().unwrap();
