@@ -1,6 +1,6 @@
 use std::fmt;
 
-const SCHEMA_BASE: &str = "http://example.com/";
+const SCHEMA_BASE: &str = "http://rdf.burntjam.com/";
 
 pub enum RDFClasses {
     TRANSACTION,
@@ -202,7 +202,7 @@ mod tests {
     #[test]
     fn test_classes() -> Result<(), Box<dyn Error>> {
         let url_1 =  RDFClasses::TRANSACTION.to_string();
-        let url_2 =  String::from("http://example.com/blockchain/classes#Transaction");
+        let url_2 =  String::from("http://rdf.burntjam.com/blockchain/classes#Transaction");
 
         assert_eq!(url_1,url_2);
         Ok(())
@@ -211,7 +211,7 @@ mod tests {
     #[test]
     fn test_meta_data() -> Result<(), Box<dyn Error>> {
         let url_1 =  RDFMeta::CREATED.to_string();
-        let url_2 =  String::from("http://example.com/blockchain/meta#created");
+        let url_2 =  String::from("http://rdf.burntjam.com/blockchain/meta#created");
 
         assert_eq!(url_1,url_2);
         Ok(())
@@ -220,7 +220,7 @@ mod tests {
     #[test]
     fn test_account() -> Result<(), Box<dyn Error>> {
         let url_1 =  RDFAccount::ID.to_string();
-        let url_2 =  String::from("http://example.com/blockchain/account#accountID");
+        let url_2 =  String::from("http://rdf.burntjam.com/blockchain/account#accountID");
 
         assert_eq!(url_1,url_2);
         Ok(())
@@ -229,7 +229,7 @@ mod tests {
     #[test]
     fn test_transaction() -> Result<(), Box<dyn Error>> {
         let url_1 =  RDFTransaction::ID.to_string();
-        let url_2 =  String::from("http://example.com/blockchain/transaction#transactionID");
+        let url_2 =  String::from("http://rdf.burntjam.com/blockchain/transaction#transactionID");
 
         assert_eq!(url_1,url_2);
         Ok(())
@@ -238,7 +238,7 @@ mod tests {
     #[test]
     fn test_block() -> Result<(), Box<dyn Error>> {
         let url_1 =  RDFBlock::ID.to_string();
-        let url_2 =  String::from("http://example.com/blockchain/block#blockID");
+        let url_2 =  String::from("http://rdf.burntjam.com/blockchain/block#blockID");
 
         assert_eq!(url_1,url_2);
         Ok(())
@@ -247,7 +247,7 @@ mod tests {
     #[test]
     fn test_transaction_leg() -> Result<(), Box<dyn Error>> {
         let url_1 =  RDFTransactionLeg::LEG_STATE.to_string();
-        let url_2 =  String::from("http://example.com/blockchain/leg#legState");
+        let url_2 =  String::from("http://rdf.burntjam.com/blockchain/leg#legState");
 
         assert_eq!(url_1,url_2);
         Ok(())
@@ -256,7 +256,7 @@ mod tests {
     #[test]
     fn test_tangle() -> Result<(), Box<dyn Error>> {
         let url_1 =  RDFTangle::ID.to_string();
-        let url_2 =  String::from("http://example.com/blockchain/tangle#tangleID");
+        let url_2 =  String::from("http://rdf.burntjam.com/blockchain/tangle#tangleID");
 
         assert_eq!(url_1,url_2);
         Ok(())
@@ -265,7 +265,7 @@ mod tests {
     #[test]
     fn test_contract() -> Result<(), Box<dyn Error>> {
         let url_1 =  RDFContract::ID.to_string();
-        let url_2 =  String::from("http://example.com/blockchain/countract#contractID");
+        let url_2 =  String::from("http://rdf.burntjam.com/blockchain/countract#contractID");
 
         assert_eq!(url_1,url_2);
         Ok(())
@@ -275,7 +275,7 @@ mod tests {
     #[test]
     fn test_contract_version() -> Result<(), Box<dyn Error>> {
         let url_1 =  RDFContractVersion::ID.to_string();
-        let url_2 =  String::from("http://example.com/blockchain/countractVersion#contractVersionID");
+        let url_2 =  String::from("http://rdf.burntjam.com/blockchain/countractVersion#contractVersionID");
 
         assert_eq!(url_1,url_2);
         Ok(())
