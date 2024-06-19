@@ -30,15 +30,19 @@ impl BlockContract {
         let rdf_query = if contract_id.len() > 0 {format!(
             r#"SELECT ?code ?accountHash ?contractName ?contractNamespace ?contractHash  WHERE {{ 
                 ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#hash> '{}'^^<http://www.w3.org/2001/XMLSchema#string> .
-                FILTER (STRSTARTS(STR(?contract),'http://keto-coin.io/schema/rdf/1.0/keto/Contract'))
-                ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#accountHash> ?accountHash .
-                ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#name> ?contractName .
-                ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#hash> ?contractHash .
+                FILTER (STRSTARTS(STR(?contract),'{}'))
+                ?contract <{}> ?accountHash .
+                ?contract <{}> ?contractName .
+                ?contract <{}> ?contractHash .
                 ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#namespace> ?contractNamespace .
                 ?contractVersion <http://keto-coin.io/schema/rdf/1.0/keto/ContractVersion#contract> ?contract .
                 ?contractVersion <http://keto-coin.io/schema/rdf/1.0/keto/ContractVersion#dateTime> ?dateTime .
                 ?contractVersion <http://keto-coin.io/schema/rdf/1.0/keto/ContractVersion#value> ?code . }}
-                ORDER BY DESC (?dateTime) LIMIT 1"#,String::from_utf8(contract_id.clone()).unwrap())} 
+                ORDER BY DESC (?dateTime) LIMIT 1"#,String::from_utf8(contract_id.clone()).unwrap(),
+                rdf_lib::constants::RDFClasses::CONTRACT.to_string(),
+                rdf_lib::constants::RDFContract::ACCOUNT_ID.to_string(),
+                rdf_lib::constants::RDFContract::CONTRACT_NAME.to_string(),
+                rdf_lib::constants::RDFContract::CONTRACT_ID.to_string())} 
                 else {format!(
                     r#"SELECT ?code ?accountHash ?contractName ?contractNamespace ?contractHash  WHERE {{ 
                         ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#name> '{}'^^<http://www.w3.org/2001/XMLSchema#string> .
