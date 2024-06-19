@@ -38,7 +38,7 @@ pub async fn create(addr: &str, https: bool) {
             service
         );
 
-    if https {
+    /*if https {
         #[cfg(any(target_os = "macos", target_os = "windows", target_os = "ios"))]
         {
             unimplemented!("SSL is not implemented for the examples on MacOS, Windows or iOS");
@@ -74,10 +74,10 @@ pub async fn create(addr: &str, https: bool) {
                 }
             }
         }
-    } else {
-        // Using HTTP
+    }else {
+        // Using HTTP*/
         hyper::server::Server::bind(&addr).serve(service).await.unwrap()
-    }
+    //}
 }
 
 #[derive(Copy, Clone)]
