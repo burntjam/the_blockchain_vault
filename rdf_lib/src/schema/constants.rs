@@ -155,7 +155,9 @@ pub enum RDFContract {
     ACCOUNT,
     ACCOUNT_ID,
     CONTRACT_ID,
-    CONTRACT_NAME,    
+    CONTRACT_NAME,
+    NAMESPACE,
+    CONTRACT,
 }
 
 impl fmt::Display for RDFContract {
@@ -166,6 +168,8 @@ impl fmt::Display for RDFContract {
             RDFContract::ACCOUNT_ID => "accountId",
             RDFContract::CONTRACT_ID => "contractId",
             RDFContract::CONTRACT_NAME => "contractName",
+            RDFContract::NAMESPACE => "namespace",
+            RDFContract::CONTRACT => "contract",
         };
         write!(f, "{}blockchain/countract#{}", SCHEMA_BASE, base_str)
     }
@@ -175,6 +179,7 @@ pub enum RDFContractVersion {
     ID,
     CONTRACT_ID,
     CONTRACT,
+    DATE_TIME,
     VERSION,
     CODE,    
 }
@@ -185,6 +190,7 @@ impl fmt::Display for RDFContractVersion {
             RDFContractVersion::ID => "contractVersionID",
             RDFContractVersion::CONTRACT_ID => "contratcId",
             RDFContractVersion::CONTRACT => "contract",
+            RDFContractVersion::DATE_TIME => "dateTime",
             RDFContractVersion::VERSION => "version",
             RDFContractVersion::CODE => "code",
         };

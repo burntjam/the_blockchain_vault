@@ -253,7 +253,7 @@ mod tests {
         }
     }
 
-    fn create_transaciton() -> Vec<u8> {
+    fn create_transaction() -> Vec<u8> {
         
         let date: DateTime<Utc> = Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap();
         let integer = 42u8; // Using a simple integer for this example
@@ -373,7 +373,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_block_processor_new() -> Result<(), Box<dyn Error>> {
-        let transaction = create_transaciton();
+        let transaction = create_transaction();
         let transaction_processor = BlockTransactionProcessor::new(
             &transaction, &MockStoreSessionFactory::new()?, 
             &TransactionMockTangleManager::new()?, &TransactionMockContractManager::new()?,
@@ -385,7 +385,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_block_transaction_processor_factory_new() -> Result<(), Box<dyn Error>> {
-        let transaction = create_transaciton();
+        let transaction = create_transaction();
         let _ = BlockTransactionProcessorFactory::new(
             &MockStoreSessionFactory::new()?, 
             &TransactionMockTangleManager::new()?,

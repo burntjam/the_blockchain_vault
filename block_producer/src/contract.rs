@@ -29,32 +29,48 @@ impl BlockContract {
         let store_client_ref = store_client.lock().unwrap();
         let rdf_query = if contract_id.len() > 0 {format!(
             r#"SELECT ?code ?accountHash ?contractName ?contractNamespace ?contractHash  WHERE {{ 
-                ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#hash> '{}'^^<http://www.w3.org/2001/XMLSchema#string> .
+                ?contract <{}> '{}'^^<http://www.w3.org/2001/XMLSchema#string> .
                 FILTER (STRSTARTS(STR(?contract),'{}'))
                 ?contract <{}> ?accountHash .
                 ?contract <{}> ?contractName .
                 ?contract <{}> ?contractHash .
-                ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#namespace> ?contractNamespace .
-                ?contractVersion <http://keto-coin.io/schema/rdf/1.0/keto/ContractVersion#contract> ?contract .
-                ?contractVersion <http://keto-coin.io/schema/rdf/1.0/keto/ContractVersion#dateTime> ?dateTime .
-                ?contractVersion <http://keto-coin.io/schema/rdf/1.0/keto/ContractVersion#value> ?code . }}
-                ORDER BY DESC (?dateTime) LIMIT 1"#,String::from_utf8(contract_id.clone()).unwrap(),
+                ?contract <{}> ?contractNamespace .
+                ?contractVersion <{}> ?contract .
+                ?contractVersion <{}> ?dateTime .
+                ?contractVersion <{}> ?code . }}
+                ORDER BY DESC (?dateTime) LIMIT 1"#,
+                rdf_lib::constants::RDFContract::CONTRACT_ID.to_string(),
+                String::from_utf8(contract_id.clone()).unwrap(),
                 rdf_lib::constants::RDFClasses::CONTRACT.to_string(),
                 rdf_lib::constants::RDFContract::ACCOUNT_ID.to_string(),
                 rdf_lib::constants::RDFContract::CONTRACT_NAME.to_string(),
-                rdf_lib::constants::RDFContract::CONTRACT_ID.to_string())} 
+                rdf_lib::constants::RDFContract::CONTRACT_ID.to_string(),
+                rdf_lib::constants::RDFContract::NAMESPACE.to_string(),
+                rdf_lib::constants::RDFContractVersion::CONTRACT.to_string(),
+                rdf_lib::constants::RDFContractVersion::DATE_TIME.to_string(),
+                rdf_lib::constants::RDFContractVersion::CODE.to_string())} 
                 else {format!(
                     r#"SELECT ?code ?accountHash ?contractName ?contractNamespace ?contractHash  WHERE {{ 
-                        ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#name> '{}'^^<http://www.w3.org/2001/XMLSchema#string> .
-                        FILTER (STRSTARTS(STR(?contract),'http://keto-coin.io/schema/rdf/1.0/keto/Contract'))
-                        ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#accountHash> ?accountHash .
-                        ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#name> ?contractName .
-                        ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#hash> ?contractHash .
-                        ?contract <http://keto-coin.io/schema/rdf/1.0/keto/Contract#namespace> ?contractNamespace .
-                        ?contractVersion <http://keto-coin.io/schema/rdf/1.0/keto/ContractVersion#contract> ?contract .
-                        ?contractVersion <http://keto-coin.io/schema/rdf/1.0/keto/ContractVersion#dateTime> ?dateTime .
-                        ?contractVersion <http://keto-coin.io/schema/rdf/1.0/keto/ContractVersion#value> ?code . }}
-                        ORDER BY DESC (?dateTime) LIMIT 1"#,contract_name.clone())};
+                ?contract <{}> '{}'^^<http://www.w3.org/2001/XMLSchema#string> .
+                FILTER (STRSTARTS(STR(?contract),'{}'))
+                ?contract <{}> ?accountHash .
+                ?contract <{}> ?contractName .
+                ?contract <{}> ?contractHash .
+                ?contract <{}> ?contractNamespace .
+                ?contractVersion <{}> ?contract .
+                ?contractVersion <{}> ?dateTime .
+                ?contractVersion <{}> ?code . }}
+                ORDER BY DESC (?dateTime) LIMIT 1"#,
+                rdf_lib::constants::RDFContract::CONTRACT_NAME.to_string(),
+                contract_name.clone(),
+                rdf_lib::constants::RDFClasses::CONTRACT.to_string(),
+                rdf_lib::constants::RDFContract::ACCOUNT_ID.to_string(),
+                rdf_lib::constants::RDFContract::CONTRACT_NAME.to_string(),
+                rdf_lib::constants::RDFContract::CONTRACT_ID.to_string(),
+                rdf_lib::constants::RDFContract::NAMESPACE.to_string(),
+                rdf_lib::constants::RDFContractVersion::CONTRACT.to_string(),
+                rdf_lib::constants::RDFContractVersion::DATE_TIME.to_string(),
+                rdf_lib::constants::RDFContractVersion::CODE.to_string())};
 
         let result = 
             futures::executor::block_on(async {store_client_ref.query_async(&rdf_query).await})?;
