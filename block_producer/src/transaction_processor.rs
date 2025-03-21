@@ -118,7 +118,7 @@ impl BlockTransactionProcessor {
 
         println!("Before executing the action");
         let action_executor = self.action_manager.lock().unwrap().create_action_executor(&contract)?;
-        action_executor.lock().unwrap().execute(transaction_state, &mut change_set);
+        action_executor.lock().unwrap().execute(transaction_state, &mut change_set)?;
         println!("After execution");
 
         let signed_change_set = SignedChangeSet{

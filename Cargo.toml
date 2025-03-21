@@ -22,3 +22,12 @@ members = [
     "rest_stub",
     "rest_server",
 ]
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+oxigraph = "0.3.21"
+async-trait = "0.1.77"
+chrono = "0.4.34"
+rasn = "0.7.0"
